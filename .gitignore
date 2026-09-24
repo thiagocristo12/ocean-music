@@ -1,0 +1,14 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente (contêm senhas): nunca vão para o GitHub
+.env
+.env.*
+!.env.example
+
+# Build, logs e sistema
+dist/
+*.log
+Thumbs.db
+.DS_Store
+.vscode/
