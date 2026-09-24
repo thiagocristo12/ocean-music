@@ -13,3 +13,5 @@
 | D-09 | Tailwind CSS **3.4** (versão fixada) | Configuração em arquivo; evita a mudança de setup da v4 | Tailwind v4 | 2 |
 | D-10 | Vite como ferramenta de build | React precisa de uma etapa de build e servidor de desenvolvimento | Create React App (descontinuado) | 2 |
 | D-11 | `react-router-dom` só entra quando a primeira rota for criada | Não instalar dependência sem uso | Instalar tudo no início | 2 |
+| D-12 | Paleta, fontes e sombras definidas como tokens no `tailwind.config.js` | Um único lugar para mudar a identidade visual; classes como `bg-ocean-600` em todo o projeto | Cores soltas em cada componente | 3 |
+| D-13 | Fontes Sora e Inter via Google Fonts | Identidade tecnológica e boa leitura, sem instalar pacote | Instalar as fontes no projeto (funciona offline; avaliar no refinamento) | 3 |
