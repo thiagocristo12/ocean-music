@@ -17,3 +17,5 @@
 | D-13 | Fontes Sora e Inter via Google Fonts | Identidade tecnológica e boa leitura, sem instalar pacote | Instalar as fontes no projeto (funciona offline; avaliar no refinamento) | 3 |
 | D-14 | `react-router-dom` instalado nesta etapa (executa a D-11) | A Landing precisa de links reais para /login e /cadastro | — | 4 |
 | D-15 | Links de navegação usam `<Link>` com as classes do `Button` (`buttonBaseClasses`/`buttonVariants`), em vez do componente `<Button>` | Evita aninhar `<button>` dentro de `<a>`, o que é HTML inválido; `Button` fica reservado para ações reais (enviar formulário, clique em JS) | Usar sempre `<Button>` | 4 |
+| D-16 | Autenticação MOCK com `localStorage` (chaves `ocean:v1:users` e `ocean:v1:session`) | Testar o fluxo completo de cadastro/login antes de existir backend | Backend primeiro (atrasaria todas as telas) | 5 |
+| D-17 | Contexto de autenticação dividido em três arquivos: `AuthContext.js` (contexto puro), `AuthProvider.jsx` (componente) e `useAuth.js` (hook) | Mesma regra do Fast Refresh que corrigimos no `Button`: um arquivo de componente só pode exportar componentes | Um único arquivo (gera erro no `npm run lint`) | 5 |
