@@ -15,3 +15,5 @@
 | D-11 | `react-router-dom` só entra quando a primeira rota for criada | Não instalar dependência sem uso | Instalar tudo no início | 2 |
 | D-12 | Paleta, fontes e sombras definidas como tokens no `tailwind.config.js` | Um único lugar para mudar a identidade visual; classes como `bg-ocean-600` em todo o projeto | Cores soltas em cada componente | 3 |
 | D-13 | Fontes Sora e Inter via Google Fonts | Identidade tecnológica e boa leitura, sem instalar pacote | Instalar as fontes no projeto (funciona offline; avaliar no refinamento) | 3 |
+| D-14 | `react-router-dom` instalado nesta etapa (executa a D-11) | A Landing precisa de links reais para /login e /cadastro | — | 4 |
+| D-15 | Links de navegação usam `<Link>` com as classes do `Button` (`buttonBaseClasses`/`buttonVariants`), em vez do componente `<Button>` | Evita aninhar `<button>` dentro de `<a>`, o que é HTML inválido; `Button` fica reservado para ações reais (enviar formulário, clique em JS) | Usar sempre `<Button>` | 4 |
