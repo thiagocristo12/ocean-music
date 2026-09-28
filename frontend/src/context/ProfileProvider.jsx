@@ -4,51 +4,48 @@ import useAuth from '../hooks/useAuth.js';
 import * as profileService from '../services/profileService.js';
 
 function ProfileProvider({ children }) {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading: authLoading } = useAuth();
+  const userId = user?.id ?? null;
 
-  // Recarrega sempre que o usuário mudar (login, logout ou troca de conta).
-  // Mesmo padrão do AuthProvider: nenhum setState roda diretamente no corpo
-  // do efeito — tudo acontece dentro do .then(), que é assíncrono por
-  // natureza e não conta como "setState síncrono dentro de um efeito".
+  // Guarda o perfil JUNTO com o id do usuário a quem ele pertence.
+  // Assim sabemos se o que está no estado é do usuário atual ou sobra de outro.
+  const [loaded, setLoaded] = useState({ userId: null, profile: null });
+
   useEffect(() => {
+    if (!userId) return;
     let isCancelled = false;
 
-    Promise.resolve()
-      .then(() => (user ? profileService.getProfile(user.id) : null))
-      .then((current) => {
-        if (isCancelled) return;
-        setProfile(current);
-        setIsLoading(false);
-      });
+    profileService.getProfile(userId).then((current) => {
+      if (isCancelled) return;
+      setLoaded({ userId, profile: current });
+    });
 
-    // Evita atualizar o estado se o usuário mudar de novo antes
-    // da primeira busca terminar (efeito "cancelado")
     return () => {
       isCancelled = true;
     };
-  }, [user]);
+  }, [userId]);
 
-  // Recarrega o perfil sob demanda, fora de um efeito
-  // (ex.: útil se no futuro criarmos um botão "atualizar perfil")
+  const isCurrentUserLoaded = userId !== null && loaded.userId === userId;
+  const profile = isCurrentUserLoaded ? loaded.profile : null;
+
+  // Carregando = a autenticação ainda não terminou, OU há usuário logado
+  // cujo perfil ainda não chegou.
+  const isLoading = authLoading || (userId !== null && !isCurrentUserLoaded);
+
   const refreshProfile = useCallback(async () => {
-    if (!user) {
-      setProfile(null);
-      return;
-    }
-    const current = await profileService.getProfile(user.id);
-    setProfile(current);
-  }, [user]);
+    if (!userId) return;
+    const current = await profileService.getProfile(userId);
+    setLoaded({ userId, profile: current });
+  }, [userId]);
 
   const saveProfile = useCallback(
     async (input) => {
-      if (!user) throw new Error('Usuário não autenticado.');
-      const saved = await profileService.saveProfile(user.id, input);
-      setProfile(saved);
+      if (!userId) throw new Error('Usuário não autenticado.');
+      const saved = await profileService.saveProfile(userId, input);
+      setLoaded({ userId, profile: saved });
       return saved;
     },
-    [user]
+    [userId]
   );
 
   const value = {

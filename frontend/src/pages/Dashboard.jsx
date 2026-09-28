@@ -11,7 +11,7 @@ import GreetingHeader from '../components/dashboard/GreetingHeader.jsx';
 import NextActionCard from '../components/dashboard/NextActionCard.jsx';
 import StreakCard from '../components/dashboard/StreakCard.jsx';
 import CurrentGoalCard from '../components/dashboard/CurrentGoalCard.jsx';
-import RecommendationCard from '../components/dashboard/RecommendationCard.jsx';
+import RecommendationCard from '../components/tracks/RecommendationCard.jsx';
 
 function Dashboard() {
   const { user } = useAuth();
