@@ -41,7 +41,13 @@
       pura de pontuação; utils/streak.js: cálculo de sequência a partir de
       datas de atividade; services/progressService.js: só leitura por enquanto;
       layouts/AppHeader.jsx; components/dashboard/*)
-- [ ] Etapa 8: Trilhas — listagem (/trilhas) e detalhe (/trilhas/:slug) (próxima)
+- [x] Etapa 8: Trilhas — listagem (/trilhas) com "Para você" e filtro por área;
+      detalhe (/trilhas/:slug) com acordeão de etapas e lições
+      (data/trackContent.js; utils/trackProgress.js; components/tracks/*;
+      pages/Tracks.jsx e TrackDetail.jsx). Nenhuma lição trancada.
+      Progresso ainda sempre 0 até a Etapa 9.
+- [ ] Etapa 9: Exercícios — rota /exercicio/:id, tipos de exercício,
+      resultado como fase da mesma rota, gravação de progresso (próxima)
 
 ## Observações
 - Cuidado com a pasta do terminal: rodar npm sempre dentro de `frontend`.
@@ -51,3 +57,8 @@
 - Progresso de trilha e atividade diária ainda sempre vêm vazios (todo usuário
   novo zera streak e progresso) — isso muda só na Etapa 9, quando os
   exercícios passarem a gravar em progressService.
+- ProfileProvider: isLoading é derivado (perfil guardado junto do id do dono).
+  Bug de corrida corrigido na Etapa 8 (decisão D-29).
+- Sempre testar cada tela também com F5 na própria página, não só navegando por links.
+- Decisões registradas até D-30. Links de lição vão para /exercicio/<trilha>--<licao>
+  e ainda caem em "não encontrada" até a Etapa 9.
