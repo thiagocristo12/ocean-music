@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Card } from '../components/ui';
 import Logo from '../components/brand/Logo.jsx';
 import OnboardingProgress from '../components/onboarding/OnboardingProgress.jsx';
@@ -24,45 +24,69 @@ const emptyDraft = {
 
 function toggleSlug(list, slug, max) {
   if (list.includes(slug)) return list.filter((item) => item !== slug);
-  if (list.length >= max) return list; // já atingiu o limite: ignora o clique
+  if (list.length >= max) return list;
   return [...list, slug];
 }
 
 function Onboarding() {
   const { user } = useAuth();
-  const { isOnboardingComplete, isLoading: profileLoading, saveProfile } = useProfile();
+  const { profile, isOnboardingComplete, isLoading: profileLoading, saveProfile } = useProfile();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isEditMode = searchParams.get('edit') === '1';
+
+  // Verdadeiro quando esta tela só vai redirecionar para outro lugar
+  // (perfil já completo, fora do modo de edição). Enquanto o perfil ainda
+  // está carregando, tratamos como "vai redirecionar" por segurança, para
+  // nunca criar/salvar um rascunho vazio à toa.
+  const willRedirectAway = profileLoading || (isOnboardingComplete && !isEditMode);
 
   const [options, setOptions] = useState(null);
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState(emptyDraft);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Carrega o catálogo (áreas/objetivos/estilos) e um rascunho salvo antes,
-  // caso o usuário tenha saído no meio do onboarding.
+  // Ponto de partida do formulário, em ordem de prioridade:
+  // 1) um rascunho salvo antes (onboarding/edição interrompidos), ou
+  // 2) o perfil já salvo, se a tela foi aberta em modo de edição, ou
+  // 3) um formulário em branco.
   useEffect(() => {
+    // Nunca prepara nada se a tela vai só redirecionar — evita criar um
+    // rascunho vazio que "vaza" para uma futura edição de perfil.
+    if (willRedirectAway) return;
+
     let isCancelled = false;
 
     async function load() {
       const catalogOptions = await profileService.getOptions();
       const savedDraft = profileService.getDraft(user.id);
       if (isCancelled) return;
+
       setOptions(catalogOptions);
-      if (savedDraft) setDraft(savedDraft);
+
+      if (savedDraft) {
+        setDraft(savedDraft);
+      } else if (isEditMode && profile) {
+        setDraft({
+          level: profile.level,
+          priorExperience: profile.priorExperience,
+          areaSlugs: profile.areaSlugs,
+          goalSlugs: profile.goalSlugs,
+          styleSlugs: profile.styleSlugs,
+        });
+      }
     }
 
     load();
     return () => {
       isCancelled = true;
     };
-  }, [user.id]);
+  }, [user.id, isEditMode, profile, willRedirectAway]);
 
-  // Salva o rascunho a cada mudança (só depois que o catálogo já carregou,
-  // para não sobrescrever um rascunho salvo com os valores em branco)
   useEffect(() => {
-    if (!options) return;
+    if (!options || willRedirectAway) return;
     profileService.saveDraft(user.id, draft);
-  }, [draft, options, user.id]);
+  }, [draft, options, user.id, willRedirectAway]);
 
   const updateDraft = useCallback((patch) => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -80,8 +104,7 @@ function Onboarding() {
     setDraft((current) => ({ ...current, styleSlugs: toggleSlug(current.styleSlugs, slug, 3) }));
   }, []);
 
-  // Quem já concluiu o onboarding antes não deve ver o formulário de novo
-  if (!profileLoading && isOnboardingComplete) {
+  if (!profileLoading && isOnboardingComplete && !isEditMode) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -111,7 +134,7 @@ function Onboarding() {
     setIsSubmitting(true);
     try {
       await saveProfile(draft);
-      navigate('/dashboard');
+      navigate(isEditMode ? '/perfil' : '/dashboard');
     } finally {
       setIsSubmitting(false);
     }
@@ -123,6 +146,15 @@ function Onboarding() {
         <div className="mb-6 flex justify-center">
           <Logo />
         </div>
+
+        {isEditMode && (
+          <div className="mb-4 flex items-center justify-between">
+           <p className="text-sm font-medium text-ocean-600">Editando seu perfil</p>
+           <Link to="/perfil" className="text-sm font-medium text-ink-500 hover:underline">
+             Cancelar
+           </Link>
+         </div>
+        )}
 
         <OnboardingProgress current={step} total={TOTAL_STEPS} />
 
@@ -176,7 +208,7 @@ function Onboarding() {
 
             {step === TOTAL_STEPS && (
               <Button onClick={handleFinish} disabled={isSubmitting} className="flex-1">
-                {isSubmitting ? 'Salvando...' : 'Ir para meu painel'}
+                {isSubmitting ? 'Salvando...' : isEditMode ? 'Salvar alterações' : 'Ir para meu painel'}
               </Button>
             )}
           </div>

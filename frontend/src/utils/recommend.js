@@ -1,16 +1,23 @@
 import { areas, styles, goals } from '../data/catalog.js';
 
-// Pontuação (decisão registrada em docs/decisoes.md):
-// área compatível +3 · objetivo compatível +3 · estilo compatível +2
-// nível compatível +2 · trilha de nível acima do usuário -3
+// Pontuação (decisão D-22): área compatível +3 · objetivo compatível +3
+// estilo compatível +2 · nível compatível +2 · nível acima do usuário -3
 const SCORE_AREA = 3;
 const SCORE_GOAL = 3;
 const SCORE_STYLE = 2;
 const SCORE_LEVEL_MATCH = 2;
 const SCORE_LEVEL_ABOVE = -3;
 
+// Ordem em que os motivos aparecem na tela: o mais específico primeiro
+// (decisão D-39), não a ordem em que aconteceram de ser calculados.
+const REASON_PRIORITY = ['GOAL', 'AREA', 'STYLE', 'LEVEL', 'LEVEL_FALLBACK'];
+
 function nameOf(list, slug) {
   return list.find((item) => item.slug === slug)?.name ?? slug;
+}
+
+function sortReasons(reasons) {
+  return [...reasons].sort((a, b) => REASON_PRIORITY.indexOf(a.code) - REASON_PRIORITY.indexOf(b.code));
 }
 
 function scoreTrack(track, profile) {
@@ -44,11 +51,11 @@ function scoreTrack(track, profile) {
     score += SCORE_LEVEL_ABOVE;
   }
 
-  return { score, reasons };
+  return { score, reasons: sortReasons(reasons) };
 }
 
 // trackProgress: mapa { [slug]: { completedLessons } } — usado para não
-// recomendar trilhas já concluídas. Hoje sempre chega vazio (Etapa 9 preenche).
+// recomendar trilhas já concluídas.
 export function recommendTracks(profile, allTracks, { limit = 4, trackProgress = {} } = {}) {
   const notCompleted = allTracks.filter((track) => {
     const progress = trackProgress[track.slug];
@@ -62,8 +69,6 @@ export function recommendTracks(profile, allTracks, { limit = 4, trackProgress =
 
   const result = scored.slice(0, limit);
 
-  // Sem trilhas suficientes com pontuação > 0: completa com trilhas do
-  // mesmo nível do usuário, para o Dashboard nunca ficar vazio.
   if (result.length < limit) {
     const alreadyIncluded = new Set(result.map((entry) => entry.track.slug));
     const fallback = notCompleted

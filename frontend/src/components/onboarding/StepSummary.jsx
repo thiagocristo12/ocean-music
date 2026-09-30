@@ -1,15 +1,5 @@
 import { Card } from '../ui';
-
-const levelLabels = { beginner: 'Iniciante', intermediate: 'Intermediário' };
-const experienceLabels = {
-  none: 'Nunca teve contato com música',
-  some: 'Já teve algum contato',
-  regular: 'Estuda com regularidade',
-};
-
-function findNames(list, slugs) {
-  return slugs.map((slug) => list.find((item) => item.slug === slug)?.name).filter(Boolean);
-}
+import { levelLabels, experienceLabels, findNames } from '../../utils/profileLabels.js';
 
 function SummaryRow({ label, value, onEdit }) {
   return (

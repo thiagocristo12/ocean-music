@@ -7,17 +7,15 @@ import Dashboard from '../pages/Dashboard.jsx';
 import Tracks from '../pages/Tracks.jsx';
 import TrackDetail from '../pages/TrackDetail.jsx';
 import Exercise from '../pages/Exercise.jsx';
+import Profile from '../pages/Profile.jsx';
 import DesignSystem from '../pages/DesignSystem.jsx';
 import NotFound from '../pages/NotFound.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import RequireOnboarding from './RequireOnboarding.jsx';
 import RedirectIfAuth from './RedirectIfAuth.jsx';
 
-// A rota de exercício usa o MESMO componente <Exercise> para lições
-// diferentes (ex.: ao clicar em "Próxima lição"). Sem uma key baseada no
-// id da lição, o React reaproveita a mesma instância do componente e o
-// estado interno (fase, exercício atual, acertos) "vaza" de uma lição
-// para a outra. Este wrapper força uma instância nova a cada id.
+// Ver decisão D-37 (Etapa 9): garante uma instância nova do player a cada
+// lição diferente, mesmo trocando de lição pela mesma rota.
 function ExerciseRoute() {
   const { id } = useParams();
   return <Exercise key={id} />;
@@ -83,6 +81,14 @@ function AppRoutes() {
         element={
           <RequireOnboarding>
             <ExerciseRoute />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <RequireOnboarding>
+            <Profile />
           </RequireOnboarding>
         }
       />
