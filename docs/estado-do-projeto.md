@@ -2,13 +2,28 @@
 
 ## Ambiente
 - Windows, PowerShell, VS Code. Pasta: C:\Users\Usuario\Desktop\Coisas do Thiago\DEV\ocean-music
-- Node 22.15.0 · Git 2.41 · PostgreSQL 18.6 (psql)
+- Node 22.15.0 · Git 2.41 · PostgreSQL 18.6 (psql). psql já no PATH do usuário.
 - Repositório no GitHub (branch main). Uma branch por etapa (etapa-NN-nome).
 - ATENÇÃO: não usar a pasta antiga Documents\ocean-music (abandonada, desatualizada).
 
+## Banco de dados (criado na Etapa 12)
+- Banco: ocean_music
+- Superusuário: postgres (senha definida na instalação do PostgreSQL)
+- Usuário da aplicação: ocean_app / senha: ocean_dev_password (só dev local)
+- Rodar scripts SQL: schema.sql como `postgres` (dono das tabelas); seed.sql
+  e uso do dia a dia como `ocean_app` (tem GRANT explícito em tabelas e
+  sequences existentes + ALTER DEFAULT PRIVILEGES para tabelas futuras — D-52)
+- Se o terminal mostrar acentos quebrados (ex. "Viol├úo"), rodar `chcp 65001`
+  antes do psql — é só exibição, os dados estão certos em UTF-8
+- Scripts em backend/database/schema.sql e backend/database/seed.sql
+- Seed inclui usuários de demonstração Ana e Bruno (password_hash é
+  PLACEHOLDER_ETAPA_13, ainda não funcional para login)
+- Testado: consulta SQL que reproduz a pontuação de recomendação bate com
+  utils/recommend.js (Violão: Primeiros Passos = 10 pontos pro perfil da Ana)
+
 ## Stack e regras
 - Front-end: React + Vite + Tailwind 3.4 (fixado) · JavaScript · react-router-dom
-- Back-end: Node.js nativo (node:http), SEM Express · driver pg · PostgreSQL (a partir da Etapa 12)
+- Back-end: Node.js nativo (node:http), SEM Express · driver pg · PostgreSQL
 - Testes: vitest (`npm run test`), rodando em frontend/src/utils/*.test.js
 - Sessão em tabela (não JWT) · tabela `areas` (não `instruments`) · resultado do
   exercício como fase da mesma rota /exercicio/:id
@@ -22,66 +37,46 @@
 ## Padrões de código descobertos (aplicar sempre)
 - useEffect que busca dados: nenhum setState direto no corpo do efeito.
   Sempre `Promise.resolve().then(...).then((resultado) => { if (isCancelled) return; setState(...); })`
-  (regra do ESLint react-hooks/set-state-in-effect)
 - Um arquivo de componente (.jsx) só pode exportar componentes (regra do Fast
   Refresh). Constantes/funções auxiliares vão para um .js separado.
-- Rotas reaproveitadas com parâmetro variável (ex.: /exercicio/:id apontando
-  pro mesmo componente em navegações sucessivas) precisam de key={param} num
+- Rotas reaproveitadas com parâmetro variável precisam de key={param} num
   wrapper, senão o estado interno do componente "vaza" de uma página pra outra.
 - Hooks sempre rodam, mesmo em um render que só vai redirecionar (<Navigate />).
-  Qualquer efeito que salva algo (ex.: rascunho) precisa de uma guarda
-  explícita pra não salvar em cenários que vão só redirecionar.
+  Qualquer efeito que salva algo precisa de guarda explícita pra não salvar
+  em cenários que vão só redirecionar.
 - SEMPRE testar cada tela também recarregando com F5 na própria página, não
-  só navegando por links — pega bugs de carregamento inicial que passar por
-  cliques não revela.
+  só navegando por links.
+- PostgreSQL: GRANT em DATABASE não dá permissão sobre tabelas de outro dono;
+  precisa de GRANT explícito em ALL TABLES/SEQUENCES + ALTER DEFAULT PRIVILEGES.
 
 ## Progresso
-- [x] Etapa 1: arquitetura
-- [x] Etapa 2: configuração (Vite, Tailwind, pastas, Git/GitHub)
-- [x] Etapa 3: Design System (components/ui: Button, Card, ProgressBar, Input,
-      Chip; página de apoio em /dev/ui)
-- [x] Etapa 4: Landing Page + rotas (components/brand: Logo, WaveDivider;
-      buttonBaseClasses/buttonVariants em components/ui/buttonStyles.js)
-- [x] Etapa 5: Cadastro e Login — autenticação MOCK em localStorage
-      (services/authService.js; context/AuthContext + AuthProvider;
-      hooks/useAuth; routes/ProtectedRoute e RedirectIfAuth)
-- [x] Etapa 6: Onboarding — formulário de perfil musical em 5 passos (MOCK)
-      (data/catalog.js; services/profileService.js; context/ProfileContext +
-      ProfileProvider; hooks/useProfile; routes/RequireOnboarding;
-      components/onboarding/*; rascunho salvo em localStorage a cada passo)
-- [x] Etapa 7: Dashboard real — recomendação personalizada e sequência de
-      estudos (data/tracks.js: 9 trilhas mock; utils/recommend.js;
-      utils/streak.js; services/progressService.js; layouts/AppHeader.jsx;
-      components/dashboard/*)
-- [x] Etapa 8: Trilhas — listagem (/trilhas) com "Para você" e filtro por
-      área; detalhe (/trilhas/:slug) com acordeão de etapas e lições
-      (data/trackContent.js; utils/trackProgress.js; components/tracks/*)
-      Bug corrigido: ProfileProvider isLoading derivado (D-29)
-- [x] Etapa 9: Exercícios — rota /exercicio/:id (3 fases: intro/exercise/
-      result), registry de tipos (multiple_choice, true_false),
-      gravação de progresso real (utils/exercises.js;
-      data/exerciseContent.js; utils/lessonContent.js — conteúdo autoral só
-      em "violao-primeiros-passos", demais lições usam fallback genérico;
-      progressService.completeLesson; components/exercises/*)
-      Bug corrigido: key={id} em ExerciseRoute (AppRoutes.jsx) para resetar
-      estado ao trocar de lição pela mesma rota (D-37)
-      >>> CHECKPOINT 1 ALCANÇADO: protótipo navegável ponta a ponta <<<
-- [x] Etapa 10: Personalização — tela /perfil (somente leitura); edição de
-      perfil via /onboarding?edit=1 (reaproveita os 5 passos, com botão
-      "Cancelar" visível); motivos de recomendação em ordem fixa
-      (utils/recommend.js: GOAL > AREA > STYLE > LEVEL); primeiros testes
-      automatizados com vitest (recommend.test.js, streak.test.js)
-      Bugs corrigidos: rascunho vazio "vazando" pro modo de edição quando o
-      onboarding redirecionava sem `?edit=1` (D-42); logo do onboarding não
-      é clicável de propósito, botão "Cancelar" adicionado no modo edição (D-43)
-- [ ] Etapa 11: Progresso — tela /progresso com histórico de atividade,
-      evolução por área/trilha, todos os objetivos (não só o primeiro) (próxima)
+- [x] Etapa 1 a 11: ver commits no histórico do Git e docs/decisoes.md
+      (D-01 a D-46) para o detalhe de cada uma. Resumo: toda a aplicação
+      React está completa e navegável com dados mock (localStorage) —
+      cadastro, login, onboarding, dashboard com recomendação personalizada,
+      trilhas, exercícios com gravação de progresso real, edição de perfil,
+      tela de progresso. CHECKPOINT 1 alcançado na Etapa 9.
+- [x] Etapa 12: Banco PostgreSQL — schema.sql (16 tabelas) e seed.sql
+      (catálogo completo, 9 trilhas, conteúdo completo só da trilha
+      "Violão: Primeiros Passos", 2 usuários de demonstração).
+      Decisões D-47 a D-52.
+- [ ] Etapa 13: Integração completa (PRÓXIMA — é grande, dividir em
+      sub-blocos): servidor Node.js sem Express (node:http + roteador
+      próprio), conexão com o banco via pg, autenticação real
+      (crypto.scrypt + sessão em cookie httpOnly), endpoints REST,
+      troca de cada service do front-end (mock → HTTP real) sem reescrever
+      telas. Ao final: MVP real rodando com React + Node + PostgreSQL
+      >>> será o CHECKPOINT 2 <<<
 
 ## Observações
 - Cuidado com a pasta do terminal: rodar npm sempre dentro de `frontend`.
-- Decisões registradas em docs/decisoes.md (D-01 a D-43).
-- Duas contas de teste já usadas nas etapas anteriores:
-  "Ana" (iniciante, violão, rock, objetivo aprender acordes) e
-  "Bruno" (intermediário, piano/teoria, clássico, objetivo aperfeiçoar teoria)
-  — úteis para continuar validando que perfis diferentes geram resultados
-  diferentes nas próximas etapas.
+- Decisões registradas em docs/decisoes.md (D-01 a D-52).
+- Duas contas de teste mock já usadas desde a Etapa 7: "Ana" (iniciante,
+  violão, rock, objetivo aprender acordes) e "Bruno" (intermediário,
+  piano/teoria, clássico, objetivo aperfeiçoar teoria). As mesmas personas
+  existem agora também como seed no banco (ids fixos
+  11111111-...-111111111111 e 22222222-...-222222222222).
+- Ao começar a Etapa 13, sugerir dividir em sub-blocos nesta ordem:
+  1) servidor base + conexão com banco, 2) autenticação real,
+  3) catálogo/perfil, 4) trilhas/exercícios/progresso,
+  5) troca dos services do front-end um de cada vez.
