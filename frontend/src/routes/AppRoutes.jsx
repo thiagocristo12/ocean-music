@@ -8,14 +8,13 @@ import Tracks from '../pages/Tracks.jsx';
 import TrackDetail from '../pages/TrackDetail.jsx';
 import Exercise from '../pages/Exercise.jsx';
 import Profile from '../pages/Profile.jsx';
+import Progress from '../pages/Progress.jsx';
 import DesignSystem from '../pages/DesignSystem.jsx';
 import NotFound from '../pages/NotFound.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import RequireOnboarding from './RequireOnboarding.jsx';
 import RedirectIfAuth from './RedirectIfAuth.jsx';
 
-// Ver decisão D-37 (Etapa 9): garante uma instância nova do player a cada
-// lição diferente, mesmo trocando de lição pela mesma rota.
 function ExerciseRoute() {
   const { id } = useParams();
   return <Exercise key={id} />;
@@ -89,6 +88,14 @@ function AppRoutes() {
         element={
           <RequireOnboarding>
             <Profile />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/progresso"
+        element={
+          <RequireOnboarding>
+            <Progress />
           </RequireOnboarding>
         }
       />

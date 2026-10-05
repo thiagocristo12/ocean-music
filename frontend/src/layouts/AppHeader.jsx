@@ -17,6 +17,9 @@ function AppHeader() {
           <Link to="/trilhas" className={smallGhost}>
             Trilhas
           </Link>
+          <Link to="/progresso" className={smallGhost}>
+            Progresso
+          </Link>
           <Link to="/perfil" className={smallGhost}>
             Perfil
           </Link>
