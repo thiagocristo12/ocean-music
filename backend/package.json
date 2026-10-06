@@ -1,0 +1,14 @@
+{
+  "name": "ocean-music-backend",
+  "version": "1.0.0",
+  "description": "API do Ocean Music — Node.js nativo, sem Express.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch --env-file=.env src/server.js",
+    "start": "node --env-file=.env src/server.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
