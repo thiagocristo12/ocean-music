@@ -143,8 +143,8 @@ INSERT INTO exercises (lesson_id, key, position, type, prompt, payload, solution
 -- de segurança já prevista desde a análise arquitetural inicial).
 
 INSERT INTO users (id, name, email, password_hash) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'Ana', 'ana@ocean.music', 'PLACEHOLDER_ETAPA_13'),
-  ('22222222-2222-2222-2222-222222222222', 'Bruno', 'bruno@ocean.music', 'PLACEHOLDER_ETAPA_13');
+  ('11111111-1111-1111-1111-111111111111', 'Ana', 'ana@ocean.music', 'scrypt$b7d2c28769335d730cad2a2fd6e512b1$cff9d138f6e9b6236985d3b48d46525642c10bb00d64bcfdc9bb909b4b25e4b9b7e1f92302bb65243a3b4662115d8f53f6df3a4d17f7862888a169a18bba9d33'),
+  ('22222222-2222-2222-2222-222222222222', 'Bruno', 'bruno@ocean.music', 'scrypt$1433eeac061f87a5fcba8fd57c5db3ea$71155493d30ad017236d4944b508f72db68749e000317778bda4122d883cfb82c23cff36e7698531ff428a9b792fefb95427b377375b6ad6f915707ac07d6f69');
 
 INSERT INTO profiles (user_id, level, prior_experience) VALUES
   ('11111111-1111-1111-1111-111111111111', 'beginner', 'none'),
