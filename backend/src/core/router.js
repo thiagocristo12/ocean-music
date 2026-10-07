@@ -1,8 +1,6 @@
 import { sendJson } from './http.js';
 import { AppError } from './errors.js';
 
-// Transforma um caminho como '/api/tracks/:slug' em um RegExp que
-// reconhece '/api/tracks/violao-primeiros-passos' e extrai { slug: '...' }.
 function compilePath(path) {
   const paramNames = [];
   const pattern = path
@@ -12,7 +10,7 @@ function compilePath(path) {
         paramNames.push(segment.slice(1));
         return '([^/]+)';
       }
-      return segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escapa caracteres especiais de regex
+      return segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     })
     .join('/');
 
@@ -20,11 +18,17 @@ function compilePath(path) {
 }
 
 export function createRouter() {
-  const routes = []; // { method, regex, paramNames, handler }
+  const routes = []; // { method, regex, paramNames, middlewares, handler }
 
-  function register(method, path, handler) {
+  // Aceita tanto register(method, path, handler)
+  // quanto register(method, path, [middlewares], handler).
+  function register(method, path, middlewaresOrHandler, maybeHandler) {
+    const hasMiddlewares = Array.isArray(middlewaresOrHandler);
+    const middlewares = hasMiddlewares ? middlewaresOrHandler : [];
+    const handler = hasMiddlewares ? maybeHandler : middlewaresOrHandler;
+
     const { regex, paramNames } = compilePath(path);
-    routes.push({ method, regex, paramNames, handler });
+    routes.push({ method, regex, paramNames, middlewares, handler });
   }
 
   function extractParams(route, pathname) {
@@ -36,9 +40,6 @@ export function createRouter() {
     return params;
   }
 
-  // handler(ctx) deve devolver os dados a serem enviados como resposta
-  // (o router embrulha em { data: ... } e cuida do status 200).
-  // Para erros esperados, o handler lança um AppError.
   async function handle(req, res) {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathname = url.pathname;
@@ -48,7 +49,6 @@ export function createRouter() {
     );
 
     if (!matchingRoute) {
-      // Existe alguma rota com esse caminho, mas método diferente?
       const pathExists = routes.some((route) => route.regex.test(pathname));
       if (pathExists) {
         sendJson(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Método não permitido.' } });
@@ -60,16 +60,18 @@ export function createRouter() {
 
     const params = extractParams(matchingRoute, pathname);
     const query = Object.fromEntries(url.searchParams);
+    const ctx = { req, res, params, query };
 
     try {
-      const data = await matchingRoute.handler({ req, res, params, query });
+      for (const middleware of matchingRoute.middlewares) {
+        await middleware(ctx);
+      }
+      const data = await matchingRoute.handler(ctx);
       sendJson(res, 200, { data });
     } catch (error) {
       if (error instanceof AppError) {
         sendJson(res, error.statusCode, { error: { code: error.code, message: error.message } });
       } else {
-        // Erro inesperado (bug): não vaza detalhes internos para o cliente,
-        // mas registra no terminal do servidor para você conseguir depurar.
         console.error('Erro interno:', error);
         sendJson(res, 500, { error: { code: 'INTERNAL_ERROR', message: 'Erro interno do servidor.' } });
       }
@@ -77,11 +79,11 @@ export function createRouter() {
   }
 
   return {
-    get: (path, handler) => register('GET', path, handler),
-    post: (path, handler) => register('POST', path, handler),
-    put: (path, handler) => register('PUT', path, handler),
-    patch: (path, handler) => register('PATCH', path, handler),
-    delete: (path, handler) => register('DELETE', path, handler),
+    get: (path, ...args) => register('GET', path, ...args),
+    post: (path, ...args) => register('POST', path, ...args),
+    put: (path, ...args) => register('PUT', path, ...args),
+    patch: (path, ...args) => register('PATCH', path, ...args),
+    delete: (path, ...args) => register('DELETE', path, ...args),
     handle,
   };
 }
