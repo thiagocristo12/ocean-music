@@ -4,6 +4,8 @@ import { postRegister, postLogin, postLogout, getMe } from './modules/auth/authC
 import { requireAuth } from './modules/auth/requireAuth.js';
 import { getOptions } from './modules/catalog/catalogController.js';
 import { getMyProfile, putMyProfile } from './modules/profile/profileController.js';
+import { listTracks, getTrackBySlug } from './modules/tracks/trackController.js';
+import { getLessonContent } from './modules/lessons/lessonController.js';
 
 export function createApp() {
   const router = createRouter();
@@ -19,6 +21,10 @@ export function createApp() {
 
   router.get('/api/me/profile', [requireAuth], getMyProfile);
   router.put('/api/me/profile', [requireAuth], putMyProfile);
+
+  router.get('/api/tracks', listTracks);
+  router.get('/api/tracks/:slug', getTrackBySlug);
+  router.get('/api/lessons/:id', getLessonContent);
 
   return router;
 }
