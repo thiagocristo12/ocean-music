@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useAuth from '../hooks/useAuth.js';
 import useProfile from '../hooks/useProfile.js';
-import { tracks } from '../data/tracks.js';
+import * as trackService from '../services/trackService.js';
 import { goals as goalCatalog } from '../data/catalog.js';
 import { recommendTracks } from '../utils/recommend.js';
 import { computeStreak } from '../utils/streak.js';
@@ -17,16 +17,20 @@ import RecommendationCard from '../components/tracks/RecommendationCard.jsx';
 function Dashboard() {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const [tracks, setTracks] = useState(null);
   const [dashboardInputs, setDashboardInputs] = useState(null);
 
   useEffect(() => {
     let isCancelled = false;
 
     Promise.resolve()
-      .then(() => progressService.getDashboardInputs(user.id))
-      .then((inputs) => {
+      .then(() =>
+        Promise.all([trackService.listTracks(), progressService.getDashboardInputs(user.id)])
+      )
+      .then(([tracksResult, inputsResult]) => {
         if (isCancelled) return;
-        setDashboardInputs(inputs);
+        setTracks(tracksResult);
+        setDashboardInputs(inputsResult);
       });
 
     return () => {
@@ -34,7 +38,7 @@ function Dashboard() {
     };
   }, [user.id]);
 
-  if (!profile || !dashboardInputs) {
+  if (!profile || !tracks || !dashboardInputs) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-ocean-50">
         <p className="text-ink-500">Carregando seu painel...</p>
@@ -45,8 +49,6 @@ function Dashboard() {
   const { trackProgress, dailyActivity } = dashboardInputs;
   const recommendations = recommendTracks(profile, tracks, { limit: 4, trackProgress });
 
-  // Se existe uma trilha começada e ainda não concluída, ela vira o destaque
-  // ("Continue de onde parou"). Sem isso, o destaque é a melhor recomendação.
   const inProgressTrack = tracks.find((track) => {
     const completed = getCompletedLessons(trackProgress, track.slug);
     return completed > 0 && completed < track.totalLessons;

@@ -15,7 +15,7 @@ function ProfileProvider({ children }) {
     if (!userId) return;
     let isCancelled = false;
 
-    profileService.getProfile(userId).then((current) => {
+    profileService.getProfile().then((current) => {
       if (isCancelled) return;
       setLoaded({ userId, profile: current });
     });
@@ -34,14 +34,14 @@ function ProfileProvider({ children }) {
 
   const refreshProfile = useCallback(async () => {
     if (!userId) return;
-    const current = await profileService.getProfile(userId);
+    const current = await profileService.getProfile();
     setLoaded({ userId, profile: current });
   }, [userId]);
 
   const saveProfile = useCallback(
     async (input) => {
       if (!userId) throw new Error('Usuário não autenticado.');
-      const saved = await profileService.saveProfile(userId, input);
+      const saved = await profileService.saveProfile(input);
       setLoaded({ userId, profile: saved });
       return saved;
     },

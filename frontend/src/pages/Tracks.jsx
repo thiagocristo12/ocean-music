@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useAuth from '../hooks/useAuth.js';
 import useProfile from '../hooks/useProfile.js';
-import { tracks } from '../data/tracks.js';
+import * as trackService from '../services/trackService.js';
 import { recommendTracks } from '../utils/recommend.js';
 import { getProgressPercent } from '../utils/trackProgress.js';
 import * as progressService from '../services/progressService.js';
@@ -13,19 +13,21 @@ import RecommendationCard from '../components/tracks/RecommendationCard.jsx';
 function Tracks() {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const [tracks, setTracks] = useState(null);
   const [dashboardInputs, setDashboardInputs] = useState(null);
   const [selectedAreaSlug, setSelectedAreaSlug] = useState(null);
 
-  // Mesmo padrão seguro já usado em ProfileProvider e Dashboard:
-  // nenhum setState direto no corpo do efeito.
   useEffect(() => {
     let isCancelled = false;
 
     Promise.resolve()
-      .then(() => progressService.getDashboardInputs(user.id))
-      .then((inputs) => {
+      .then(() =>
+        Promise.all([trackService.listTracks(), progressService.getDashboardInputs(user.id)])
+      )
+      .then(([tracksResult, inputsResult]) => {
         if (isCancelled) return;
-        setDashboardInputs(inputs);
+        setTracks(tracksResult);
+        setDashboardInputs(inputsResult);
       });
 
     return () => {
@@ -33,7 +35,7 @@ function Tracks() {
     };
   }, [user.id]);
 
-  if (!profile || !dashboardInputs) {
+  if (!profile || !tracks || !dashboardInputs) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-ocean-50">
         <p className="text-ink-500">Carregando trilhas...</p>

@@ -1,58 +1,24 @@
-import { areas, styles, goals } from '../data/catalog.js';
+import { apiClient } from './apiClient.js';
 
-const PROFILES_KEY = 'ocean:v1:profiles';
 const DRAFT_KEY_PREFIX = 'ocean:v1:onboardingDraft:';
 
-function delay(ms = 250) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function readProfiles() {
-  try {
-    const raw = localStorage.getItem(PROFILES_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeProfiles(profiles) {
-  localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
-}
-
-// Simula uma chamada de API que devolve o catálogo (útil se, no futuro,
-// as opções passarem a vir do backend em vez de um arquivo local).
 export async function getOptions() {
-  await delay(150);
-  return { areas, styles, goals };
+  return apiClient.get('/catalog/options');
 }
 
-export async function getProfile(userId) {
-  await delay();
-  const profiles = readProfiles();
-  return profiles[userId] || null;
-}
-
-export async function saveProfile(userId, input) {
-  await delay();
-  const profiles = readProfiles();
-
-  const profile = {
-    level: input.level,
-    priorExperience: input.priorExperience,
-    areaSlugs: input.areaSlugs,
-    goalSlugs: input.goalSlugs,
-    styleSlugs: input.styleSlugs,
-    completedAt: new Date().toISOString(),
-  };
-
-  profiles[userId] = profile;
-  writeProfiles(profiles);
-  clearDraft(userId);
+export async function getProfile() {
+  const { profile } = await apiClient.get('/me/profile');
   return profile;
 }
 
-// --- Rascunho do onboarding (para não perder o progresso ao recarregar) ---
+export async function saveProfile(input) {
+  const { profile } = await apiClient.put('/me/profile', input);
+  return profile;
+}
+
+// --- Rascunho do onboarding: continua em localStorage de propósito ---
+// É um dado efêmero, de uso só durante o preenchimento do formulário;
+// não faz sentido ocupar uma tabela no banco para isso (ver decisão D-74).
 
 export function getDraft(userId) {
   try {
