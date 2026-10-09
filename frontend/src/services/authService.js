@@ -1,94 +1,35 @@
-const USERS_KEY = 'ocean:v1:users';
-const SESSION_KEY = 'ocean:v1:session';
+import { apiClient, ApiError } from './apiClient.js';
 
-// Classe de erro própria: permite ao formulário saber QUAL erro aconteceu
-// (ex.: e-mail já cadastrado) e mostrar a mensagem no campo certo.
-export class AuthError extends Error {
-  constructor(code, message) {
-    super(message);
-    this.name = 'AuthError';
-    this.code = code;
-  }
-}
-
-// Simula o tempo de resposta de uma API de verdade,
-// para as telas já lidarem com estados de carregamento desde já.
-function delay(ms = 400) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function readUsers() {
-  try {
-    const raw = localStorage.getItem(USERS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-// Nunca devolve a senha para quem chamou a função
-function toPublicUser(user) {
-  const { id, name, email } = user;
-  return { id, name, email };
-}
-
-// ============================================================
-// MOCK: a senha fica guardada em texto puro no localStorage,
-// só para prototipar as telas. Isso é aceitável APENAS aqui.
-// Na Etapa 13, a senha passa a ser tratada só pelo backend,
-// com hash seguro (crypto.scrypt) — o front-end nunca mais
-// vê nem guarda a senha depois do envio do formulário.
-// ============================================================
+// Mantemos o nome AuthError por compatibilidade: AuthProvider.jsx verifica
+// `error.code` (não o nome da classe), então isso funciona sem alterações
+// lá. ApiError já expõe .code do mesmo jeito que o antigo AuthError mock.
+export { ApiError as AuthError };
 
 export async function register({ name, email, password }) {
-  await delay();
-  const users = readUsers();
-  const emailLower = email.trim().toLowerCase();
-
-  if (users.some((existing) => existing.email === emailLower)) {
-    throw new AuthError('EMAIL_TAKEN', 'Esse e-mail já está cadastrado.');
-  }
-
-  const user = {
-    id: crypto.randomUUID(),
-    name: name.trim(),
-    email: emailLower,
-    password,
-  };
-
-  writeUsers([...users, user]);
-  localStorage.setItem(SESSION_KEY, user.id);
-  return toPublicUser(user);
+  const { user } = await apiClient.post('/auth/register', { name, email, password });
+  return user;
 }
 
 export async function login({ email, password }) {
-  await delay();
-  const users = readUsers();
-  const emailLower = email.trim().toLowerCase();
-  const user = users.find((existing) => existing.email === emailLower);
-
-  if (!user || user.password !== password) {
-    throw new AuthError('INVALID_CREDENTIALS', 'E-mail ou senha incorretos.');
-  }
-
-  localStorage.setItem(SESSION_KEY, user.id);
-  return toPublicUser(user);
+  const { user } = await apiClient.post('/auth/login', { email, password });
+  return user;
 }
 
 export async function logout() {
-  await delay(150);
-  localStorage.removeItem(SESSION_KEY);
+  await apiClient.post('/auth/logout');
 }
 
 export async function getCurrentUser() {
-  const id = localStorage.getItem(SESSION_KEY);
-  if (!id) return null;
-
-  const users = readUsers();
-  const user = users.find((existing) => existing.id === id);
-  return user ? toPublicUser(user) : null;
+  try {
+    const { user } = await apiClient.get('/auth/me');
+    return user;
+  } catch (error) {
+    // Não logado é uma situação normal (ex.: primeira visita), não um
+    // erro a ser propagado — mesma semântica que o mock sempre teve
+    // (devolvia `null` em vez de lançar).
+    if (error instanceof ApiError && error.code === 'NOT_AUTHENTICATED') {
+      return null;
+    }
+    throw error;
+  }
 }
