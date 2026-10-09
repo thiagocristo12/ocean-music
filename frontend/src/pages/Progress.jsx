@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useAuth from '../hooks/useAuth.js';
 import useProfile from '../hooks/useProfile.js';
-import { tracks } from '../data/tracks.js';
+import * as trackService from '../services/trackService.js';
 import { goals as goalCatalog } from '../data/catalog.js';
 import { computeStreak } from '../utils/streak.js';
 import { buildActivityDays } from '../utils/activity.js';
@@ -18,18 +18,20 @@ import TrackProgressRow from '../components/progress/TrackProgressRow.jsx';
 function Progress() {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const [tracks, setTracks] = useState(null);
   const [dashboardInputs, setDashboardInputs] = useState(null);
 
-  // Mesmo padrão seguro já usado em Dashboard e Tracks (ver observações
-  // em docs/estado-do-projeto.md): nenhum setState direto no corpo do efeito.
   useEffect(() => {
     let isCancelled = false;
 
     Promise.resolve()
-      .then(() => progressService.getDashboardInputs(user.id))
-      .then((inputs) => {
+      .then(() =>
+        Promise.all([trackService.listTracks(), progressService.getDashboardInputs(user.id)])
+      )
+      .then(([tracksResult, inputsResult]) => {
         if (isCancelled) return;
-        setDashboardInputs(inputs);
+        setTracks(tracksResult);
+        setDashboardInputs(inputsResult);
       });
 
     return () => {
@@ -37,7 +39,7 @@ function Progress() {
     };
   }, [user.id]);
 
-  if (!profile || !dashboardInputs) {
+  if (!profile || !tracks || !dashboardInputs) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-ocean-50">
         <p className="text-ink-500">Carregando seu progresso...</p>

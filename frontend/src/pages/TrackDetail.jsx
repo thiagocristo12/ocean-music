@@ -34,11 +34,13 @@ function TrackDetail() {
 
   useEffect(() => {
     let isCancelled = false;
-    setTrack(null);
-    setTrackNotFound(false);
 
     Promise.resolve()
-      .then(() => Promise.all([trackService.getTrack(slug), progressService.getDashboardInputs(user.id)]))
+      .then(() => {
+        setTrack(null);
+        setTrackNotFound(false);
+        return Promise.all([trackService.getTrack(slug), progressService.getDashboardInputs(user.id)]);
+      })
       .then(([trackResult, inputsResult]) => {
         if (isCancelled) return;
         setTrack(trackResult);
