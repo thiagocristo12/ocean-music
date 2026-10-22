@@ -1,5 +1,5 @@
 export function evaluateExercise(exercise, answer) {
-  if (exercise.type === 'multiple_choice') {
+  if (exercise.type === 'multiple_choice' || exercise.type === 'audio_choice') {
     return { correct: answer?.selectedOptionId === exercise.solution.correctOptionId };
   }
   if (exercise.type === 'true_false') {

@@ -75,16 +75,16 @@ INSERT INTO stages (track_id, slug, title, position)
   SELECT id, 'ritmos-e-musicas', 'Ritmos e músicas', 3 FROM tracks WHERE slug = 'violao-primeiros-passos';
 
 INSERT INTO lessons (stage_id, slug, title, position, content) VALUES
-  ((SELECT id FROM stages WHERE slug = 'fundamentos'), 'conhecendo-o-violao', 'Conhecendo o violão', 1,
-   '[{"type":"text","title":"As partes do violão","body":"O violão tem corpo, braço e cordas. Você vai usar esses nomes o tempo todo, então vale a pena conhecê-los desde já."}]'),
+    ((SELECT id FROM stages WHERE slug = 'fundamentos'), 'conhecendo-o-violao', 'Conhecendo o violão', 1,
+   '[{"type":"text","title":"As partes do violão","body":"O violão tem corpo, braço e cordas. Você vai usar esses nomes o tempo todo, então vale a pena conhecê-los desde já."},{"type":"audio_demo","caption":"Ouça como soa a nota Mi — a mesma da 1ª corda (a mais fina) do violão solta.","stimulus":{"kind":"note","note":"E4"}}]'),
   ((SELECT id FROM stages WHERE slug = 'fundamentos'), 'postura-e-maos', 'Postura e mãos', 2,
    '[{"type":"tip","body":"Sente-se com a coluna reta e apoie o violão no colo, sem forçar o pulso da mão que aperta as cordas."}]'),
   ((SELECT id FROM stages WHERE slug = 'acordes-basicos'), 'em-e-am', 'Acordes básicos: Em e Am', 1,
    '[{"type":"text","title":"O que é um acorde?","body":"Um acorde é um conjunto de notas tocadas juntas. Em e Am são dois dos primeiros acordes que todo violonista aprende."}]'),
   ((SELECT id FROM stages WHERE slug = 'acordes-basicos'), 'troca-de-acordes', 'Troca de acordes', 2,
    '[{"type":"tip","body":"Pratique trocar entre Em e Am devagar, contando até 4 a cada troca, antes de tentar acelerar."}]'),
-  ((SELECT id FROM stages WHERE slug = 'ritmos-e-musicas'), 'ritmos', 'Ritmos', 1,
-   '[{"type":"text","title":"Batida simples em 4/4","body":"Uma batida básica alterna entre para baixo e para cima, contando 1 e 2 e 3 e 4."}]'),
+    ((SELECT id FROM stages WHERE slug = 'ritmos-e-musicas'), 'ritmos', 'Ritmos', 1,
+   '[{"type":"text","title":"Batida simples em 4/4","body":"Uma batida básica alterna entre para baixo e para cima, contando 1 e 2 e 3 e 4."},{"type":"practice","instruction":"Use o metrônomo abaixo e bata palmas (ou toque as cordas soltas) a cada clique, contando 1, 2, 3 e 4.","metronomeBpm":80}]'),
   ((SELECT id FROM stages WHERE slug = 'ritmos-e-musicas'), 'primeiras-musicas', 'Primeiras músicas', 2,
    '[{"type":"tip","body":"Escolha uma música com poucos acordes para começar, mesmo que ainda não saia perfeita."}]');
 
@@ -93,9 +93,13 @@ INSERT INTO exercises (lesson_id, key, position, type, prompt, payload, solution
    'Quantas cordas tem um violão comum?',
    '{"options":[{"id":"a","text":"4"},{"id":"b","text":"6"},{"id":"c","text":"8"}]}',
    '{"correctOptionId":"b"}', 'O violão comum tem 6 cordas.'),
-  ((SELECT id FROM lessons WHERE slug = 'conhecendo-o-violao'), 'ex-2', 2, 'true_false',
+    ((SELECT id FROM lessons WHERE slug = 'conhecendo-o-violao'), 'ex-2', 2, 'true_false',
    'As cordas mais grossas do violão produzem sons mais agudos.', '{}',
    '{"value":false}', 'É o contrário: cordas mais grossas produzem sons mais graves.'),
+  ((SELECT id FROM lessons WHERE slug = 'conhecendo-o-violao'), 'ex-3', 3, 'audio_choice',
+   'Qual nota você ouviu?',
+   '{"stimulus":{"kind":"note","note":"A4"},"options":[{"id":"a","text":"Lá (A)"},{"id":"b","text":"Dó (C)"},{"id":"c","text":"Sol (G)"}]}',
+   '{"correctOptionId":"a"}', 'Essa é a nota Lá (A) — a mesma da 5ª corda solta do violão.'),
 
   ((SELECT id FROM lessons WHERE slug = 'postura-e-maos'), 'ex-1', 1, 'true_false',
    'Forçar o pulso ajuda a tocar mais rápido.', '{}',
