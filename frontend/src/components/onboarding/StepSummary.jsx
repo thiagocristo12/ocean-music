@@ -11,7 +11,7 @@ function SummaryRow({ label, value, onEdit }) {
       <button
         type="button"
         onClick={onEdit}
-        className="shrink-0 text-sm font-medium text-ocean-700 hover:underline"
+        className="shrink-0 px-2 py-3 text-sm font-medium text-ocean-700 hover:underline"
       >
         Editar
       </button>
