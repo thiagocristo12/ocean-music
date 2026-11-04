@@ -11,8 +11,12 @@ export async function getDashboardInputs(userId) {
 }
 
 export async function completeLesson(userId, { lessonId, scorePercent }) {
-  if (typeof scorePercent !== 'number' || scorePercent < 0 || scorePercent > 100) {
-    throw new AppError('VALIDATION_ERROR', 422, 'scorePercent deve ser um número entre 0 e 100.');
+  // A coluna é smallint: só números inteiros de 0 a 100 (decisão D-99).
+  if (!Number.isInteger(scorePercent) || scorePercent < 0 || scorePercent > 100) {
+    throw new AppError('VALIDATION_ERROR', 422, 'scorePercent deve ser um número inteiro entre 0 e 100.');
+  }
+  if (typeof lessonId !== 'string') {
+    throw new AppError('VALIDATION_ERROR', 422, 'lessonId deve ser um texto.');
   }
 
   const parsed = parseLessonId(lessonId);
@@ -30,10 +34,8 @@ export async function completeLesson(userId, { lessonId, scorePercent }) {
     throw new AppError('LESSON_NOT_FOUND', 404, 'Lição não encontrada.');
   }
 
-  // Precisamos saber a posição (0-based) da lição dentro da trilha inteira,
-  // igual ao índice calculado por utils/trackProgress.js (findLessonInTrack)
-  // no front-end — é esse índice que determina até onde o progresso avança.
-  const lessonIndex = await findLessonIndexInTrack(track.id, parsed.lessonSlug);
+  // O índice é recalculado AQUI, nunca recebido do cliente (decisão D-69).
+  const lessonIndex = await progressRepository.findLessonIndexInTrack(track.id, parsed.lessonSlug);
 
   await progressRepository.completeLesson({
     userId,
@@ -42,17 +44,4 @@ export async function completeLesson(userId, { lessonId, scorePercent }) {
     lessonIndex,
     scorePercent,
   });
-}
-
-async function findLessonIndexInTrack(trackDbId, targetLessonSlug) {
-  const { pool } = await import('../../database/pool.js');
-  const result = await pool.query(
-    `SELECT l.slug
-     FROM lessons l
-     JOIN stages s ON s.id = l.stage_id
-     WHERE s.track_id = $1
-     ORDER BY s.position, l.position`,
-    [trackDbId]
-  );
-  return result.rows.findIndex((row) => row.slug === targetLessonSlug);
 }

@@ -17,11 +17,18 @@ function compilePath(path) {
   return { regex: new RegExp(`^${pattern}$`), paramNames };
 }
 
+function parseUrl(req) {
+  try {
+    return new URL(req.url, `http://${req.headers.host ?? 'localhost'}`);
+  } catch {
+    throw new AppError('INVALID_PATH', 400, 'Endereço inválido.');
+  }
+}
+
 export function createRouter() {
   const routes = []; // { method, regex, paramNames, middlewares, handler }
 
-  // Aceita tanto register(method, path, handler)
-  // quanto register(method, path, [middlewares], handler).
+  // Aceita register(method, path, handler) e register(method, path, [middlewares], handler).
   function register(method, path, middlewaresOrHandler, maybeHandler) {
     const hasMiddlewares = Array.isArray(middlewaresOrHandler);
     const middlewares = hasMiddlewares ? middlewaresOrHandler : [];
@@ -35,34 +42,38 @@ export function createRouter() {
     const match = route.regex.exec(pathname);
     const params = {};
     route.paramNames.forEach((name, index) => {
-      params[name] = decodeURIComponent(match[index + 1]);
+      try {
+        params[name] = decodeURIComponent(match[index + 1]);
+      } catch {
+        // Ex.: "%E0%A4%A" (codificação incompleta na URL)
+        throw new AppError('INVALID_PATH', 400, 'Endereço inválido.');
+      }
     });
     return params;
   }
 
   async function handle(req, res) {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const pathname = url.pathname;
-
-    const matchingRoute = routes.find(
-      (route) => route.method === req.method && route.regex.test(pathname)
-    );
-
-    if (!matchingRoute) {
-      const pathExists = routes.some((route) => route.regex.test(pathname));
-      if (pathExists) {
-        sendJson(res, 405, { error: { code: 'METHOD_NOT_ALLOWED', message: 'Método não permitido.' } });
-      } else {
-        sendJson(res, 404, { error: { code: 'NOT_FOUND', message: 'Rota não encontrada.' } });
-      }
-      return;
-    }
-
-    const params = extractParams(matchingRoute, pathname);
-    const query = Object.fromEntries(url.searchParams);
-    const ctx = { req, res, params, query };
-
+    // TUDO acontece dentro do try (decisão D-95). O servidor chama handle()
+    // sem ninguém aguardar a Promise: um erro fora do try viraria uma
+    // "unhandled rejection" e derrubaria o processo inteiro do Node.
     try {
+      const url = parseUrl(req);
+      const pathname = url.pathname;
+
+      const matchingRoute = routes.find(
+        (route) => route.method === req.method && route.regex.test(pathname)
+      );
+
+      if (!matchingRoute) {
+        const pathExists = routes.some((route) => route.regex.test(pathname));
+        if (pathExists) throw new AppError('METHOD_NOT_ALLOWED', 405, 'Método não permitido.');
+        throw new AppError('NOT_FOUND', 404, 'Rota não encontrada.');
+      }
+
+      const params = extractParams(matchingRoute, pathname);
+      const query = Object.fromEntries(url.searchParams);
+      const ctx = { req, res, params, query };
+
       for (const middleware of matchingRoute.middlewares) {
         await middleware(ctx);
       }

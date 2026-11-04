@@ -1,7 +1,6 @@
 import { pool } from '../../database/pool.js';
 
-// trackProgress: { [trackSlug]: { completedLessons } } — mesmo formato
-// que já existe em progressService.getDashboardInputs() no mock.
+// trackProgress: { [trackSlug]: { completedLessons } }
 export async function getTrackProgress(userId) {
   const result = await pool.query(
     `SELECT t.slug, utp.completed_lessons
@@ -18,8 +17,7 @@ export async function getTrackProgress(userId) {
   return trackProgress;
 }
 
-// dailyActivity: lista de strings 'AAAA-MM-DD' — mesmo formato usado por
-// utils/streak.js e utils/activity.js no front-end.
+// dailyActivity: lista de strings 'AAAA-MM-DD'
 export async function getDailyActivity(userId) {
   const result = await pool.query(
     `SELECT to_char(activity_date, 'YYYY-MM-DD') AS date
@@ -48,15 +46,26 @@ export async function findLessonId(trackSlug, lessonSlug) {
   return result.rows[0]?.id ?? null;
 }
 
-// Grava as 3 partes da conclusão de uma lição numa única transação —
-// mesmo princípio de profileRepository.saveProfile (D-61): ou tudo é
-// gravado, ou nada muda.
+// Posição (0-based) da lição dentro da trilha inteira, na ordem etapa → lição.
+// Antes ficava em progressService com um import() dinâmico (pendência da 13.4b).
+export async function findLessonIndexInTrack(trackDbId, lessonSlug) {
+  const result = await pool.query(
+    `SELECT l.slug
+     FROM lessons l
+     JOIN stages s ON s.id = l.stage_id
+     WHERE s.track_id = $1
+     ORDER BY s.position, l.position`,
+    [trackDbId]
+  );
+  return result.rows.findIndex((row) => row.slug === lessonSlug);
+}
+
+// Grava as 3 partes da conclusão numa única transação (D-61/D-68).
 export async function completeLesson({ userId, trackDbId, lessonDbId, lessonIndex, scorePercent }) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // Progresso da trilha: nunca recua (mesma regra do mock, Etapa 9 — D-34).
     await client.query(
       `INSERT INTO user_track_progress (user_id, track_id, completed_lessons)
        VALUES ($1, $2, $3)
@@ -66,7 +75,6 @@ export async function completeLesson({ userId, trackDbId, lessonDbId, lessonInde
       [userId, trackDbId, lessonIndex + 1]
     );
 
-    // Atividade de hoje (usada para calcular a sequência de estudos).
     await client.query(
       `INSERT INTO user_daily_activity (user_id, activity_date)
        VALUES ($1, CURRENT_DATE)
@@ -74,7 +82,6 @@ export async function completeLesson({ userId, trackDbId, lessonDbId, lessonInde
       [userId]
     );
 
-    // Melhor pontuação da lição: também nunca recua.
     await client.query(
       `INSERT INTO user_lesson_scores (user_id, lesson_id, best_score_percent)
        VALUES ($1, $2, $3)

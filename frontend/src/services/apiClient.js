@@ -1,6 +1,3 @@
-// Erro padronizado para qualquer chamada à API — o "equivalente real" do
-// AuthError que o mock lançava (Etapa 5), mas genérico para qualquer
-// endpoint, não só autenticação.
 export class ApiError extends Error {
   constructor(code, message, status) {
     super(message);
@@ -15,8 +12,6 @@ async function request(path, { method = 'GET', body } = {}) {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
-    // Garante que o cookie de sessão (HttpOnly) seja enviado e recebido —
-    // sem isso, cada requisição pareceria vir de um visitante anônimo novo.
     credentials: 'same-origin',
   });
 
@@ -25,6 +20,14 @@ async function request(path, { method = 'GET', body } = {}) {
   if (!response.ok) {
     const code = payload?.error?.code ?? 'UNKNOWN_ERROR';
     const message = payload?.error?.message ?? 'Algo deu errado. Tente novamente.';
+
+    // Sessão expirada ou apagada no meio do uso: volta para o login em vez de
+    // deixar a tela presa em "Carregando..." (decisão D-100). A rota /auth/me
+    // é exceção: é a verificação inicial, e "não logado" ali é normal.
+    if (response.status === 401 && code === 'NOT_AUTHENTICATED' && path !== '/auth/me') {
+      window.location.assign('/login');
+    }
+
     throw new ApiError(code, message, response.status);
   }
 

@@ -1,4 +1,5 @@
 import { pool } from '../../database/pool.js';
+import { AppError } from '../../core/errors.js';
 
 export async function findProfileByUserId(userId) {
   const profileResult = await pool.query(
@@ -38,9 +39,9 @@ export async function findProfileByUserId(userId) {
   };
 }
 
-// Salva o perfil inteiro de uma vez, dentro de uma transação: ou tudo
-// é gravado com sucesso, ou nada é alterado (evita um perfil "pela
-// metade" se algo falhar no meio do caminho, ex.: conexão cair).
+// Salva o perfil inteiro numa transação. Se algum slug não existir no
+// catálogo, o INSERT ... SELECT não insere nada (rowCount 0): tratamos isso
+// como erro de validação e a transação inteira é desfeita (decisão D-98).
 export async function saveProfile(userId, { level, priorExperience, areaSlugs, goalSlugs, styleSlugs }) {
   const client = await pool.connect();
   try {
@@ -53,30 +54,31 @@ export async function saveProfile(userId, { level, priorExperience, areaSlugs, g
       [userId, level, priorExperience]
     );
 
-    // Edição de perfil (Etapa 10): limpa as escolhas antigas antes de
-    // gravar as novas, mais simples do que calcular quais mudaram.
     await client.query('DELETE FROM profile_areas WHERE user_id = $1', [userId]);
     await client.query('DELETE FROM profile_goals WHERE user_id = $1', [userId]);
     await client.query('DELETE FROM profile_styles WHERE user_id = $1', [userId]);
 
     for (const [index, slug] of areaSlugs.entries()) {
-      await client.query(
+      const result = await client.query(
         `INSERT INTO profile_areas (user_id, area_id, priority)
          SELECT $1, id, $2 FROM areas WHERE slug = $3`,
         [userId, index + 1, slug]
       );
+      if (result.rowCount === 0) throw new AppError('VALIDATION_ERROR', 422, 'Área inválida.');
     }
     for (const slug of goalSlugs) {
-      await client.query(
+      const result = await client.query(
         'INSERT INTO profile_goals (user_id, goal_id) SELECT $1, id FROM goals WHERE slug = $2',
         [userId, slug]
       );
+      if (result.rowCount === 0) throw new AppError('VALIDATION_ERROR', 422, 'Objetivo inválido.');
     }
     for (const slug of styleSlugs) {
-      await client.query(
+      const result = await client.query(
         'INSERT INTO profile_styles (user_id, style_id) SELECT $1, id FROM styles WHERE slug = $2',
         [userId, slug]
       );
+      if (result.rowCount === 0) throw new AppError('VALIDATION_ERROR', 422, 'Estilo inválido.');
     }
 
     await client.query('COMMIT');

@@ -3,25 +3,38 @@ import { AppError } from '../../core/errors.js';
 import * as authRepository from './authRepository.js';
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+const UNIQUE_VIOLATION = '23505'; // código do PostgreSQL para "valor duplicado"
+
+function emailTakenError() {
+  return new AppError('EMAIL_TAKEN', 409, 'Esse e-mail já está cadastrado.');
+}
 
 export async function register({ name, email, password }) {
-  const existing = await authRepository.findUserByEmail(email);
-  if (existing) {
-    throw new AppError('EMAIL_TAKEN', 409, 'Esse e-mail já está cadastrado.');
-  }
+  const cleanEmail = email.trim();
+
+  const existing = await authRepository.findUserByEmail(cleanEmail);
+  if (existing) throw emailTakenError();
 
   const passwordHash = await hashPassword(password);
-  const user = await authRepository.insertUser({ name: name.trim(), email: email.trim(), passwordHash });
+
+  let user;
+  try {
+    user = await authRepository.insertUser({ name: name.trim(), email: cleanEmail, passwordHash });
+  } catch (error) {
+    // Dois cadastros simultâneos com o mesmo e-mail: o índice único do banco
+    // barra o segundo, e aqui traduzimos para a mesma resposta amigável.
+    if (error.code === UNIQUE_VIOLATION) throw emailTakenError();
+    throw error;
+  }
 
   const sessionId = await createSession(user.id);
   return { user, sessionId };
 }
 
 export async function login({ email, password }) {
-  const user = await authRepository.findUserByEmail(email);
+  const user = await authRepository.findUserByEmail(email.trim());
 
-  // Mesma mensagem genérica usada no mock (decisão da Etapa 5): não revela
-  // se o e-mail existe ou não, para não facilitar descobrir contas.
+  // Mensagem genérica de propósito: não revela se o e-mail existe.
   if (!user || !(await verifyPassword(password, user.password_hash))) {
     throw new AppError('INVALID_CREDENTIALS', 401, 'E-mail ou senha incorretos.');
   }
