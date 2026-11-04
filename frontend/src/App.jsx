@@ -1,4 +1,5 @@
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+import ConnectionBanner from './components/ConnectionBanner.jsx';
 import AuthProvider from './context/AuthProvider.jsx';
 import ProfileProvider from './context/ProfileProvider.jsx';
 import AppRoutes from './routes/AppRoutes.jsx';
@@ -11,6 +12,7 @@ function App() {
           <AppRoutes />
         </ProfileProvider>
       </AuthProvider>
+      <ConnectionBanner />
     </ErrorBoundary>
   );
 }

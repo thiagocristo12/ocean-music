@@ -14,7 +14,7 @@ function StreakCard({ streak }) {
       </div>
       <div>
         <p className="text-xl font-bold text-ink-900">
-          {streak.current} {streak.current === 1 ? 'dia' : 'dias'} seguidos
+          {streak.current === 1 ? '1 dia seguido' : `${streak.current} dias seguidos`}
         </p>
         <p className="text-sm text-ink-500">{statusMessages[streak.status]}</p>
       </div>

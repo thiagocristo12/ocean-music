@@ -8,10 +8,13 @@ function AuthProvider({ children }) {
 
   // Ao abrir (ou recarregar) o app, verifica se já existe uma sessão salva
   useEffect(() => {
-    authService.getCurrentUser().then((currentUser) => {
-      setUser(currentUser);
-      setIsLoading(false);
-    });
+    authService
+      .getCurrentUser()
+      .then((currentUser) => setUser(currentUser))
+      // Falha de conexão: o ConnectionBanner já avisa o usuário. Aqui só
+      // garantimos que o app não fique preso em "Carregando..." (D-104).
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const register = useCallback(async (data) => {
