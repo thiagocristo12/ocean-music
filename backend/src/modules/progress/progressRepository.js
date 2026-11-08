@@ -77,8 +77,8 @@ export async function completeLesson({ userId, trackDbId, lessonDbId, lessonInde
 
     await client.query(
       `INSERT INTO user_daily_activity (user_id, activity_date)
-       VALUES ($1, CURRENT_DATE)
-       ON CONFLICT (user_id, activity_date) DO NOTHING`,
+      VALUES ($1, (NOW() AT TIME ZONE 'America/Sao_Paulo')::date)
+      ON CONFLICT (user_id, activity_date) DO NOTHING`,
       [userId]
     );
 
