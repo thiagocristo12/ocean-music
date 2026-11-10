@@ -56,9 +56,14 @@ function Profile() {
           />
         </Card>
 
-        <Link to="/onboarding?edit=1" className={`${buttonBaseClasses} ${buttonVariants.primary} w-full`}>
-          Editar perfil
-        </Link>
+        <div className="space-y-3">
+          <Link to="/onboarding?edit=1" className={`${buttonBaseClasses} ${buttonVariants.primary} w-full`}>
+            Editar perfil
+          </Link>
+          <Link to="/configuracoes" className={`${buttonBaseClasses} ${buttonVariants.secondary} w-full`}>
+            Configurações
+          </Link>
+        </div>
       </main>
     </div>
   );

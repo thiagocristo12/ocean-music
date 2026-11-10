@@ -1,11 +1,18 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as audioEngine from '../audio/audioEngine.js';
+import { isSoundEnabled, notifySoundDisabled } from '../utils/preferences.js';
 
 export function usePlayNote() {
   const [isPlaying, setIsPlaying] = useState(false);
   const timeoutRef = useRef(null);
 
   const play = useCallback(async (note, options = {}) => {
+    // Respeita "Sons ativados" (Configurações): sem som, só avisa (D-115).
+    if (!isSoundEnabled()) {
+      notifySoundDisabled();
+      return;
+    }
+
     const duration = options.duration ?? 1;
     setIsPlaying(true);
     if (Array.isArray(note)) {
@@ -27,6 +34,11 @@ export function useMetronome() {
   const [activeBeat, setActiveBeat] = useState(null);
 
   const start = useCallback(async (bpm, beatsPerBar = 4) => {
+    if (!isSoundEnabled()) {
+      notifySoundDisabled();
+      return;
+    }
+
     await audioEngine.startMetronome({
       bpm,
       beatsPerBar,

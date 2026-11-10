@@ -6,8 +6,8 @@ import * as lessonService from '../services/lessonService.js';
 import { findLessonInTrack, getNextLesson } from '../utils/trackProgress.js';
 import * as progressService from '../services/progressService.js';
 import AppHeader from '../layouts/AppHeader.jsx';
-import { Card, Button, buttonBaseClasses, buttonVariants } from '../components/ui';
-import ContentBlock from '../components/exercises/ContentBlock.jsx';
+import { Card, buttonBaseClasses, buttonVariants } from '../components/ui';
+import LessonIntro from '../components/exercises/LessonIntro.jsx';
 import ExerciseShell from '../components/exercises/ExerciseShell.jsx';
 import ResultSummary from '../components/exercises/ResultSummary.jsx';
 
@@ -105,8 +105,8 @@ function Exercise() {
   const nextLesson = getNextLesson(track, lessonIndex);
   const nextLessonId = nextLesson ? `${trackSlug}--${nextLesson.lesson.slug}` : null;
 
-  // Lições sem exercícios cadastrados ainda (trilhas além de "Violão:
-  // Primeiros Passos" — ver decisão D-50): mostra um aviso em vez de travar.
+  // Lições sem exercícios cadastrados ainda (ver decisão D-50): mostra um
+  // aviso em vez de travar.
   if (totalExercises === 0) {
     return (
       <div className="min-h-screen bg-ocean-50">
@@ -159,14 +159,7 @@ function Exercise() {
         </div>
 
         {phase === 'intro' && (
-          <Card className="space-y-4">
-            {lessonContent.content.map((block, blockIndex) => (
-              <ContentBlock key={blockIndex} block={block} />
-            ))}
-            <Button fullWidth onClick={() => setPhase('exercise')}>
-              Começar exercícios
-            </Button>
-          </Card>
+          <LessonIntro blocks={lessonContent.content} onFinish={() => setPhase('exercise')} />
         )}
 
         {phase === 'exercise' && (

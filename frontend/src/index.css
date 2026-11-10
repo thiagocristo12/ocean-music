@@ -14,12 +14,26 @@
   }
 }
 
-/* Acessibilidade: quem pede "reduzir movimento" no sistema não vê animações */
+/* Acessibilidade: movimento reduzido. Dois gatilhos para a mesma regra:
+   1) o aparelho pede "reduzir movimento" (prefers-reduced-motion);
+   2) a opção "Reduzir animações" das Configurações, que coloca o atributo
+      data-reduce-motion="true" no <html> (PreferencesProvider).
+   animation-iteration-count: 1 evita que animações infinitas (como as barras
+   do Waveform) continuem sendo reavaliadas a cada quadro (decisão D-117). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+html[data-reduce-motion='true'] *,
+html[data-reduce-motion='true'] *::before,
+html[data-reduce-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
 }

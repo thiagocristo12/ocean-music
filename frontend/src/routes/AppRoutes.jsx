@@ -10,6 +10,7 @@ import Exercise from '../pages/Exercise.jsx';
 import Profile from '../pages/Profile.jsx';
 import Progress from '../pages/Progress.jsx';
 import Tools from '../pages/Tools.jsx';
+import Settings from '../pages/Settings.jsx';
 import DesignSystem from '../pages/DesignSystem.jsx';
 import NotFound from '../pages/NotFound.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
@@ -105,6 +106,14 @@ function AppRoutes() {
         element={
           <RequireOnboarding>
             <Tools />
+          </RequireOnboarding>
+        }
+      />
+      <Route
+        path="/configuracoes"
+        element={
+          <RequireOnboarding>
+            <Settings />
           </RequireOnboarding>
         }
       />
